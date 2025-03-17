@@ -8,11 +8,28 @@ COPY --from=uv /uv /uvx /bin/
 RUN git clone https://github.com/jumpstarter-dev/jumpstarter.git /src
 RUN make -C /src build
 
+FROM quay.io/centos/centos:stream9-development AS dependencies
+RUN dnf update -y
+# Create a custom repo file with hardcoded values instead of variables
+RUN mkdir -p /etc/yum.repos.d
+RUN echo -e "[alexl-cs9-sample-images]\n\
+name=Copr repo for cs9-sample-images owned by alexl\n\
+baseurl=https://download.copr.fedorainfracloud.org/results/alexl/cs9-sample-images/centos-stream-9-aarch64/\n\
+type=rpm-md\n\
+skip_if_unavailable=True\n\
+gpgcheck=0\n\
+repo_gpgcheck=0\n\
+enabled=1\n\
+enabled_metadata=1" > /etc/yum.repos.d/alexl-cs9-sample-images.repo
+
+RUN dnf install --installroot /installroot -y --nogpgcheck vsomeip3 bash \
+    boost-system boost-thread boost-log boost-chrono boost-date-time boost-atomic \
+    boost-log boost-filesystem boost-regex auto-apps
+
 FROM quay.io/devfile/universal-developer-image:latest
 
 USER 0
 
-# Install required packages
 RUN dnf install -y --allowerasing \
     gcc \
     gcc-c++ \
@@ -31,6 +48,8 @@ RUN dnf install -y --allowerasing \
 # Jumpstarter
 RUN dnf install -y libusb || dnf install -y libusb1 || true && \
     dnf clean all
+
+COPY --from=dependencies /installroot /
 
 
 COPY --from=uv /uv /bin/uv
