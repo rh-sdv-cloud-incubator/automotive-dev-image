@@ -41,10 +41,6 @@ COPY --from=builder /src/dist/*.whl /tmp/
 RUN VIRTUAL_ENV=/jumpstarter uv pip install /tmp/*.whl
 ENV PATH="/jumpstarter/bin:${PATH}"
 
-RUN mkdir -p /home/user/.config/jumpstarter/clients
-RUN chown -R 10001:0 /home/user && chmod g+rwx -R /home/user
-RUN chgrp -R 0 /home && chmod -R g=u /etc/passwd /etc/group /home /etc/pki
-
 # caib
 RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.1/caib-c02b0c200980f1e99d8e9d55ce902ed76781714c-arm64 && \
     chmod +x /usr/local/bin/caib
