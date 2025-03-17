@@ -31,7 +31,8 @@ RUN tar -cf /dependencies.tar \
     /usr/lib64 \
     /usr/include \
     /usr/share/pkgconfig \
-    /usr/lib64/pkgconfig
+    /usr/lib64/pkgconfig \
+    /var/lib/rpm
 
 FROM quay.io/devfile/universal-developer-image:latest
 
