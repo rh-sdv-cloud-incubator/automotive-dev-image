@@ -10,7 +10,6 @@ RUN make -C /src build
 
 FROM quay.io/centos/centos:stream9-development AS dependencies
 RUN dnf update -y
-# Create a custom repo file with hardcoded values instead of variables
 RUN mkdir -p /etc/yum.repos.d
 RUN echo -e "[alexl-cs9-sample-images]\n\
 name=Copr repo for cs9-sample-images owned by alexl\n\
@@ -22,9 +21,17 @@ repo_gpgcheck=0\n\
 enabled=1\n\
 enabled_metadata=1" > /etc/yum.repos.d/alexl-cs9-sample-images.repo
 
-RUN dnf install --installroot /installroot -y --nogpgcheck vsomeip3 bash \
+RUN dnf install -y --nogpgcheck vsomeip3 bash \
     boost-system boost-thread boost-log boost-chrono boost-date-time boost-atomic \
-    boost-log boost-filesystem boost-regex auto-apps
+    boost-log boost-filesystem boost-regex auto-apps boost-devel vsomeip3-devel
+
+RUN tar -cf /dependencies.tar \
+    /usr/bin \
+    /usr/lib \
+    /usr/lib64 \
+    /usr/include \
+    /usr/share/pkgconfig \
+    /usr/lib64/pkgconfig
 
 FROM quay.io/devfile/universal-developer-image:latest
 
@@ -49,8 +56,16 @@ RUN dnf install -y --allowerasing \
 RUN dnf install -y libusb || dnf install -y libusb1 || true && \
     dnf clean all
 
-COPY --from=dependencies /installroot /
+COPY --from=dependencies /dependencies.tar /
+RUN tar -xf /dependencies.tar -C / && \
+    rm /dependencies.tar && \
+    ldconfig
 
+RUN find /usr -name "*vsomeip*" || echo "No vsomeip files found"
+RUN find /usr -name "*boost*" || echo "No boost files found"
+
+ENV PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/share/pkgconfig
+ENV LD_LIBRARY_PATH=/usr/lib64:/usr/lib:$LD_LIBRARY_PATH
 
 COPY --from=uv /uv /bin/uv
 RUN /bin/uv python install 3.12.3
