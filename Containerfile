@@ -41,7 +41,7 @@ COPY --from=builder /src/dist/*.whl /tmp/
 RUN VIRTUAL_ENV=/jumpstarter uv pip install /tmp/*.whl
 ENV PATH="/jumpstarter/bin:${PATH}"
 
-RUN mkdir -p /home/user/.config/jumpstarter/clients /home/user/.local/bin /home/user/.config/containers/
+RUN mkdir -p /home/user/.config/jumpstarter/clients
 RUN chown -R 10001:0 /home/user && chmod g+rwx -R /home/user
 RUN chgrp -R 0 /home && chmod -R g=u /etc/passwd /etc/group /home /etc/pki
 
