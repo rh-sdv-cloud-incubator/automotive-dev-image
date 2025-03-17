@@ -21,18 +21,9 @@ repo_gpgcheck=0\n\
 enabled=1\n\
 enabled_metadata=1" > /etc/yum.repos.d/alexl-cs9-sample-images.repo
 
-RUN dnf install -y --nogpgcheck vsomeip3 bash \
+RUN dnf install --releasever 9 --installroot /installroot -y --nogpgcheck vsomeip3 bash \
     boost-system boost-thread boost-log boost-chrono boost-date-time boost-atomic \
     boost-log boost-filesystem boost-regex auto-apps boost-devel vsomeip3-devel
-
-RUN tar -cf /dependencies.tar \
-    /usr/bin \
-    /usr/lib \
-    /usr/lib64 \
-    /usr/include \
-    /usr/share/pkgconfig \
-    /usr/lib64/pkgconfig \
-    /var/lib/rpm
 
 FROM quay.io/devfile/universal-developer-image:latest
 
@@ -57,16 +48,7 @@ RUN dnf install -y --allowerasing \
 RUN dnf install -y libusb || dnf install -y libusb1 || true && \
     dnf clean all
 
-COPY --from=dependencies /dependencies.tar /
-RUN tar -xf /dependencies.tar -C / && \
-    rm /dependencies.tar && \
-    ldconfig
-
-RUN find /usr -name "*vsomeip*" || echo "No vsomeip files found"
-RUN find /usr -name "*boost*" || echo "No boost files found"
-
-ENV PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/share/pkgconfig
-ENV LD_LIBRARY_PATH=/usr/lib64:/usr/lib:$LD_LIBRARY_PATH
+COPY --from=dependencies /installroot /
 
 COPY --from=uv /uv /bin/uv
 RUN /bin/uv python install 3.12.3
@@ -83,6 +65,10 @@ RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/aut
 RUN mkdir -p /home/user/.config
 RUN chmod -R g+rwx /home/user/{.config,.local,.cache} && \
     chgrp -R 0 /home/user/{.config,.local,.cache}
+
+
+RUN echo "user:10000:65536" >> /etc/subuid && \
+    echo "user:10000:65536" >> /etc/subgid
 
 # Switch back to default user
 USER 10001
