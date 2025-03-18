@@ -62,7 +62,7 @@ ENV PATH="/jumpstarter/bin:${PATH}"
 RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.1/caib-c02b0c200980f1e99d8e9d55ce902ed76781714c-arm64 && \
     chmod +x /usr/local/bin/caib
 
-RUN mkdir -p /home/user/.config
+RUN mkdir -p /home/user/.config/jumpstarter
 RUN chmod -R g+rwx /home/user/{.config,.local,.cache} && \
     chgrp -R 0 /home/user/{.config,.local,.cache}
 
