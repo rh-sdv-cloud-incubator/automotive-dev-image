@@ -33,6 +33,7 @@ RUN dnf install -y --allowerasing \
     gcc \
     gcc-c++ \
     make \
+    cmake \
     automake \
     autoconf \
     libtool \
@@ -59,7 +60,7 @@ RUN VIRTUAL_ENV=/jumpstarter uv pip install /tmp/*.whl
 ENV PATH="/jumpstarter/bin:${PATH}"
 
 # caib
-RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.1/caib-c02b0c200980f1e99d8e9d55ce902ed76781714c-arm64 && \
+RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.2/caib-v0.0.2-arm64 && \
     chmod +x /usr/local/bin/caib
 
 RUN mkdir -p /home/user/.config/jumpstarter
