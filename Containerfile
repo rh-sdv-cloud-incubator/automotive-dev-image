@@ -12,11 +12,17 @@ FROM quay.io/centos/centos:stream9-development AS dependencies
 
 ARG TARGETARCH
 
-RUN dnf update -y
-RUN mkdir -p /etc/yum.repos.d
-RUN echo -e "[alexl-cs9-sample-images]\n\
+RUN dnf update -y && \
+    mkdir -p /etc/yum.repos.d && \
+    COPR_ARCH=$(case "$TARGETARCH" in \
+        "amd64") echo "x86_64" ;; \
+        "arm64") echo "aarch64" ;; \
+        *) echo "$TARGETARCH" ;; \
+    esac) && \
+    echo "Using architecture for COPR repo: $COPR_ARCH for Docker TARGETARCH: $TARGETARCH" && \
+    echo -e "[alexl-cs9-sample-images]\n\
 name=Copr repo for cs9-sample-images owned by alexl\n\
-baseurl=https://download.copr.fedorainfracloud.org/results/alexl/cs9-sample-images/centos-stream-9-${TARGETARCH}/\n\
+baseurl=https://download.copr.fedorainfracloud.org/results/alexl/cs9-sample-images/centos-stream-9-$COPR_ARCH/\n\
 type=rpm-md\n\
 skip_if_unavailable=True\n\
 gpgcheck=0\n\
