@@ -9,11 +9,14 @@ RUN git clone https://github.com/jumpstarter-dev/jumpstarter.git /src
 RUN make -C /src build
 
 FROM quay.io/centos/centos:stream9-development AS dependencies
+
+ARG TARGETARCH
+
 RUN dnf update -y
 RUN mkdir -p /etc/yum.repos.d
 RUN echo -e "[alexl-cs9-sample-images]\n\
 name=Copr repo for cs9-sample-images owned by alexl\n\
-baseurl=https://download.copr.fedorainfracloud.org/results/alexl/cs9-sample-images/centos-stream-9-aarch64/\n\
+baseurl=https://download.copr.fedorainfracloud.org/results/alexl/cs9-sample-images/centos-stream-9-${TARGETARCH}/\n\
 type=rpm-md\n\
 skip_if_unavailable=True\n\
 gpgcheck=0\n\
@@ -60,21 +63,19 @@ RUN VIRTUAL_ENV=/jumpstarter uv pip install /tmp/*.whl
 ENV PATH="/jumpstarter/bin:${PATH}"
 
 # caib
-RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.2/caib-v0.0.2-arm64 && \
+RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.2/caib-v0.0.2-${TARGETARCH} && \
     chmod +x /usr/local/bin/caib
 
 RUN mkdir -p /home/user/.config/jumpstarter
-RUN chmod -R g+rwx /home/user/{.config,.local,.cache} && \
-    chgrp -R 0 /home/user/{.config,.local,.cache}
-
+RUN chmod -R g+rwx /home/user/{.config,.local,.cache}
 
 RUN echo "user:10000:65536" >> /etc/subuid && \
     echo "user:10000:65536" >> /etc/subgid
 
 # Switch back to default user
 USER 10001
-
 ENV HOME=/home/user
+ENV XDG_CONFIG_HOME=/tmp/.config
 WORKDIR /projects
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD ["tail", "-f", "/dev/null"]
