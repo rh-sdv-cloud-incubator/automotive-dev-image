@@ -78,6 +78,8 @@ RUN chmod -R g+rwx /home/user/{.config,.local,.cache}
 RUN echo "user:10000:65536" >> /etc/subuid && \
     echo "user:10000:65536" >> /etc/subgid
 
+RUN rm -rf /var/spool/mail
+
 # Switch back to default user
 USER 10001
 ENV HOME=/home/user
