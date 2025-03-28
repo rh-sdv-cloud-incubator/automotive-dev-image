@@ -1,3 +1,13 @@
+FROM --platform=${BUILDPLATFORM:-linux/arm64} ghcr.io/astral-sh/uv:latest AS uv
+
+FROM quay.io/fedora/fedora:40 AS builder
+RUN dnf install -y make git && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+COPY --from=uv /uv /uvx /bin/
+RUN git clone https://github.com/jumpstarter-dev/jumpstarter.git /src
+RUN make -C /src build
+
 FROM quay.io/centos/centos:stream9-development AS dependencies
 
 ARG TARGETARCH
@@ -36,6 +46,14 @@ ENV BUILDAH_ISOLATION=chroot
 
 COPY --from=dependencies /installroot /
 COPY --chown=0:0 entrypoint.sh /
+
+COPY --from=uv /uv /bin/uv
+RUN /bin/uv python install 3.12.3
+RUN uv venv /jumpstarter
+
+COPY --from=builder /src/dist/*.whl /tmp/
+RUN VIRTUAL_ENV=/jumpstarter uv pip install /tmp/*.whl
+ENV PATH="/jumpstarter/bin:${PATH}"
 
 RUN dnf --disableplugin=subscription-manager install -y ${INSTALL_PACKAGES}; \
   dnf update -y ; \
