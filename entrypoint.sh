@@ -27,12 +27,10 @@ then
   fi
 fi
 
-# Create subuid/gid entries for the user
 USER=$(whoami)
 START_ID=$(( $(id -u)+1 ))
-END_ID=$(( 65536+${START_ID} ))
-echo "${USER}:${START_ID}:${END_ID}" > /etc/subuid
-echo "${USER}:${START_ID}:${END_ID}" > /etc/subgid
+echo "${USER}:${START_ID}:2147483646" > /etc/subuid
+echo "${USER}:${START_ID}:2147483646" > /etc/subgid
 
 # Configure Bash shell
 if [ ! -f ${HOME}/.bashrc ]
