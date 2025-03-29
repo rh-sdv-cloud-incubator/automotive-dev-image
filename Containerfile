@@ -96,6 +96,10 @@ RUN dnf --disableplugin=subscription-manager install -y ${INSTALL_PACKAGES}; \
   chown 0:0 /etc/subuid ; \
   chmod -R g=u /etc/subuid /etc/subgid
 
+# caib
+RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.4/caib-v0.0.4-${TARGETARCH} && \
+    chmod +x /usr/local/bin/caib
+
 # oc client
 ENV OC_VERSION=4.18
 RUN echo "TARGETARCH=${TARGETARCH}, OC_VERSION=${OC_VERSION}" && \
