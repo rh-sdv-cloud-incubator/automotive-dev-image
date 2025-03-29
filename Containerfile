@@ -7,6 +7,7 @@ RUN dnf install -y make git && \
 COPY --from=uv /uv /uvx /bin/
 RUN git clone https://github.com/jumpstarter-dev/jumpstarter.git /src
 RUN make -C /src build
+
 FROM quay.io/centos/centos:stream9-development AS dependencies
 
 ARG TARGETARCH
@@ -39,67 +40,48 @@ ARG TARGETARCH
 ARG USER_HOME_DIR="/home/user"
 ARG WORK_DIR="/projects"
 ARG INSTALL_PACKAGES="\
-    # Build essentials
-    make \
-    cmake \
-    procps-ng \
-    # Security & Certificates
-    openssl \
-    ca-certificates \
-    # Compression tools
-    libbrotli \
-    tar \
-    gzip \
-    zip \
-    xz \
-    unzip \
-    # Version Control
-    git \
-    # System utilities
-    which \
-    shadow-utils \
+    procps-ng openssl tar gzip zip xz unzip which shadow-utils bash vi wget jq \
+    podman buildah skopeo podman-docker fuse-overlayfs \
+    gcc gcc-c++ make cmake \
+    glibc-devel glibc-langpack-en \
+    zlib-devel \
+    libffi-devel \
+    libstdc++-devel \
+    python3-pip python3-devel \
     util-linux \
-    # Shells and editors
-    bash \
-    zsh \
-    vi \
-    vim-minimal \
-    vim-enhanced \
-    # Network tools
-    openssh-clients \
-    wget \
-    jq \
-    # Container tools
-    podman \
-    buildah \
-    skopeo \
-    podman-docker \
-    fuse-overlayfs \
-    # Python
-    python3.12 \
-    python3.12-pip \
-    python3.12-devel"
+    vim-minimal vim-enhanced \
+    git \
+    ca-certificates \
+    # sample apps dependencies
+    vsomeip3 vsomeip3-devel \
+    boost-devel"
 
 ENV HOME=${USER_HOME_DIR}
 ENV BUILDAH_ISOLATION=chroot
 
+COPY --from=dependencies /installroot /
 COPY --chown=0:0 entrypoint.sh /
 
-RUN dnf install --disableplugin=subscription-manager -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm ; \
-  dnf --disableplugin=subscription-manager install -y ${INSTALL_PACKAGES} ; \
+
+COPY --from=uv /uv /bin/uv
+# breaks stuff
+RUN /bin/uv python install 3.12.3
+RUN uv venv /jumpstarter
+COPY --from=builder /src/dist/*.whl /tmp/
+RUN VIRTUAL_ENV=/jumpstarter uv pip install /tmp/*.whl
+ENV PATH="/jumpstarter/bin:${PATH}"
+
+RUN dnf --disableplugin=subscription-manager install -y ${INSTALL_PACKAGES}; \
   dnf update -y ; \
   dnf clean all ; \
   ln -s /usr/bin/pip3.12 /usr/bin/pip3 ; \
   ln -s /usr/bin/pip3.12 /usr/bin/pip ; \
   ln -s /usr/bin/python3.12 /usr/bin/python3 ; \
   ln -s /usr/bin/python3.12 /usr/bin/python ; \
-  useradd -u 10001 -G wheel,root -d /home/user --shell /bin/bash -m user && \
   mkdir -p /usr/local/bin ; \
   mkdir -p ${WORK_DIR} ; \
-  pip install -U podman-compose ; \
-  pip install -U cekit ; \
-  mkdir -p ${USER_HOME_DIR}/.config/containers/ ; \
-  chown -R 10001:0 ${USER_HOME_DIR}/.config ; \
+  pip3 install -U podman-compose ; \
+  pip3 install -U cekit ; \
   chgrp -R 0 /home ; \
   chmod -R g=u /home ${WORK_DIR} ; \
   chmod +x /entrypoint.sh ; \
@@ -112,11 +94,7 @@ RUN dnf install --disableplugin=subscription-manager -y https://dl.fedoraproject
   touch /etc/subgid /etc/subuid ; \
   chown 0:0 /etc/subgid ; \
   chown 0:0 /etc/subuid ; \
-  chmod -R g=u /etc/subuid /etc/subgid ;
-
-# caib
-RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.4/caib-v0.0.4-${TARGETARCH} && \
-    chmod +x /usr/local/bin/caib
+  chmod -R g=u /etc/subuid /etc/subgid
 
 # oc client
 ENV OC_VERSION=4.18
@@ -139,9 +117,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; then \
     fi | tar -C /usr/local/bin -xz --no-same-owner && \
     chmod +x /usr/local/bin/tkn /usr/local/bin/opc /usr/local/bin/tkn-pac
 
-
-USER 10001
+USER 1000
 WORKDIR ${WORK_DIR}
-ENV KUBECONFIG=/home/user/.kube/config
 ENTRYPOINT ["/usr/libexec/podman/catatonit","--","/entrypoint.sh"]
 CMD [ "tail", "-f", "/dev/null" ]
