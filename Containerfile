@@ -41,7 +41,7 @@ ARG USER_HOME_DIR="/home/user"
 ARG WORK_DIR="/projects"
 ARG INSTALL_PACKAGES="\
     procps-ng openssl tar gzip zip xz unzip which shadow-utils bash vi wget jq \
-    podman buildah skopeo podman-docker fuse-overlayfs \
+    podman buildah skopeo podman-docker podman-remote fuse-overlayfs \
     gcc gcc-c++ make cmake \
     glibc-devel glibc-langpack-en \
     zlib-devel \
@@ -54,6 +54,7 @@ ARG INSTALL_PACKAGES="\
     ca-certificates \
     rsync \
     sshpass \
+    expect \
     # sample apps dependencies
     vsomeip3 vsomeip3-devel \
     boost-devel"
