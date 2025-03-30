@@ -52,6 +52,8 @@ ARG INSTALL_PACKAGES="\
     vim-minimal vim-enhanced \
     git \
     ca-certificates \
+    rsync \
+    sshpass \
     # sample apps dependencies
     vsomeip3 vsomeip3-devel \
     boost-devel"
