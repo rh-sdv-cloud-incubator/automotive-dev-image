@@ -124,6 +124,10 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; then \
     fi | tar -C /usr/local/bin -xz --no-same-owner && \
     chmod +x /usr/local/bin/tkn /usr/local/bin/opc /usr/local/bin/tkn-pac
 
+# jumpstarter
+RUN mkdir -p /home/user/.jumpstarter && \
+    chmod -R g=u /home/user/.jumpstarter/
+
 USER 1000
 WORKDIR ${WORK_DIR}
 ENTRYPOINT ["/usr/libexec/podman/catatonit","--","/entrypoint.sh"]
