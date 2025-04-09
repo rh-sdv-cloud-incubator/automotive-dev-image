@@ -135,7 +135,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; then \
 RUN mkdir -p /home/user/.jumpstarter && \
     chmod -R g=u /home/user/.jumpstarter/
 
-USER 1000
+USER 0
 WORKDIR ${WORK_DIR}
 ENTRYPOINT ["/usr/libexec/podman/catatonit","--","/entrypoint.sh"]
 CMD [ "tail", "-f", "/dev/null" ]
