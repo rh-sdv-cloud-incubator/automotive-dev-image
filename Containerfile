@@ -107,7 +107,7 @@ RUN dnf install -y 'dnf-command(copr)' && \
 RUN dnf install automotive-image-builder -y
 
 # caib
-RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.4/caib-v0.0.4-${TARGETARCH} && \
+RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.6/caib-v0.0.6-${TARGETARCH} && \
     chmod +x /usr/local/bin/caib
 
 # oc client
@@ -135,7 +135,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; then \
 RUN mkdir -p /home/user/.jumpstarter && \
     chmod -R g=u /home/user/.jumpstarter/
 
-USER 0
+USER 1000
 WORKDIR ${WORK_DIR}
 ENTRYPOINT ["/usr/libexec/podman/catatonit","--","/entrypoint.sh"]
 CMD [ "tail", "-f", "/dev/null" ]
