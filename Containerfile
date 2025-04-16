@@ -107,7 +107,7 @@ RUN dnf install -y 'dnf-command(copr)' && \
 RUN dnf install automotive-image-builder -y
 
 # caib
-RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.6/caib-v0.0.6-${TARGETARCH} && \
+RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.7/caib-v0.0.7-${TARGETARCH} && \
     chmod +x /usr/local/bin/caib
 
 # oc client
