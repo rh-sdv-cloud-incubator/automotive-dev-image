@@ -43,6 +43,8 @@ jobs:
                   tags: |
                       ${{ env.AIB_BASE_IMAGE }}:${{ env.VERSION }}-arm64
                       ${{ env.AIB_BASE_IMAGE }}:latest-arm64
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
 
     build-aib-base-x86_64:
         runs-on: ubuntu-24.04
@@ -72,6 +74,8 @@ jobs:
                   tags: |
                       ${{ env.AIB_BASE_IMAGE }}:${{ env.VERSION }}-amd64
                       ${{ env.AIB_BASE_IMAGE }}:latest-amd64
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
 
     create-multiarch-manifest:
         needs: [build-aib-base-arm64, build-aib-base-x86_64]
