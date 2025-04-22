@@ -41,7 +41,7 @@ ARG USER_HOME_DIR="/home/user"
 ARG WORK_DIR="/projects"
 ARG INSTALL_PACKAGES="\
     procps-ng openssl tar gzip zip xz unzip which shadow-utils bash vi wget jq \
-    podman buildah skopeo podman-docker podman-remote fuse-overlayfs fuse-libs sshfs openssh-clients \
+    podman buildah skopeo podman-docker podman-remote fuse-overlayfs \
     gcc gcc-c++ make cmake \
     glibc-devel glibc-langpack-en \
     zlib-devel \
