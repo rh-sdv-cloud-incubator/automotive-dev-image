@@ -1,0 +1,32 @@
+name: automotive-dev-base
+version: 1.0
+from: quay.io/bzlotnik/automotive-dev-base:x86
+description: "Automotive Development Base Image"
+
+packages:
+    manager: dnf
+
+labels:
+  - name: io.k8s.description
+    value: "Automotive development base image"
+  - name: io.k8s.display-name
+    value: "Automotive Dev Base"
+
+envs:
+  - name: HOME
+    value: /home/user
+  - name: WORK_DIR
+    value: /projects
+  - name: BUILDAH_ISOLATION
+    value: chroot
+  - name: PATH
+    value: "/jumpstarter/bin:${PATH}"
+
+modules:
+  repositories:
+    - path: modules
+  install:
+    - name: jumpstarter
+    - name: c-devel
+    - name: dependencies
+#    - name: automotive-image-builder

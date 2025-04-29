@@ -1,0 +1,17 @@
+schema_version: 1
+name: c-devel
+version: v1.0
+description: "installs C development tools"
+packages:
+  install:
+  - cmake
+  - make
+  - glibc-devel
+  - glibc-langpack-en
+  - zlib-devel
+  - gcc
+  - util-linux
+  - libffi-devel
+  - libstdc++-devel
+  - rsync
+  - gcc-c++
