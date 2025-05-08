@@ -1,0 +1,5 @@
+name: dependencies
+description: Install dependencies
+version: v1.0
+execute:
+  - script: install.sh

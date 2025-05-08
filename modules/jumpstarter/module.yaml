@@ -1,0 +1,5 @@
+name: jumpstarter
+description: "add jumpstarter"
+version: 1.0
+execute:
+  - script: install.sh
