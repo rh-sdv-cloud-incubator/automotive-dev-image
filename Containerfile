@@ -112,7 +112,7 @@ RUN dnf install -y --nogpgcheck epel-release && \
     rm -rf /var/cache/dnf
 
 # caib
-RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.7/caib-v0.0.7-${TARGETARCH} && \
+RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.8/caib-v0.0.8-${TARGETARCH} && \
     chmod +x /usr/local/bin/caib
 
 # oc client
