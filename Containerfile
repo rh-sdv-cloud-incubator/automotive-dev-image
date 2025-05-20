@@ -1,40 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/arm64} ghcr.io/astral-sh/uv:latest AS uv
-
-FROM quay.io/fedora/fedora:40 AS builder
-RUN dnf install -y make git && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf
-COPY --from=uv /uv /uvx /bin/
-RUN git clone https://github.com/jumpstarter-dev/jumpstarter.git /src
-RUN make -C /src build
-
-FROM quay.io/centos/centos:stream9-development AS dependencies
-
-ARG TARGETARCH
-
-RUN dnf update -y && \
-    mkdir -p /etc/yum.repos.d && \
-    COPR_ARCH=$(case "$TARGETARCH" in \
-        "amd64") echo "x86_64" ;; \
-        "arm64") echo "aarch64" ;; \
-        *) echo "$TARGETARCH" ;; \
-    esac) && \
-    echo "Using architecture for COPR repo: $COPR_ARCH for Docker TARGETARCH: $TARGETARCH" && \
-    echo -e "[alexl-cs9-sample-images]\n\
-name=Copr repo for cs9-sample-images owned by alexl\n\
-baseurl=https://download.copr.fedorainfracloud.org/results/alexl/cs9-sample-images/centos-stream-9-$COPR_ARCH/\n\
-type=rpm-md\n\
-skip_if_unavailable=True\n\
-gpgcheck=0\n\
-repo_gpgcheck=0\n\
-enabled=1\n\
-enabled_metadata=1" > /etc/yum.repos.d/alexl-cs9-sample-images.repo
-
-RUN dnf install --releasever 9 --installroot /installroot -y --nogpgcheck vsomeip3 bash \
-    boost-system boost-thread boost-log boost-chrono boost-date-time boost-atomic \
-    boost-log boost-filesystem boost-regex auto-apps boost-devel vsomeip3-devel
-
-FROM quay.io/centos/centos:stream9-development
+FROM quay.io/centos/centos:stream9 AS builder
 
 ARG TARGETARCH
 ARG USER_HOME_DIR="/home/user"
@@ -42,37 +6,17 @@ ARG WORK_DIR="/projects"
 ARG INSTALL_PACKAGES="\
     procps-ng openssl tar gzip zip xz unzip which shadow-utils bash vi wget jq \
     podman buildah skopeo podman-docker podman-remote fuse-overlayfs \
-    gcc gcc-c++ make cmake \
-    glibc-devel glibc-langpack-en \
-    zlib-devel \
-    libffi-devel \
-    libstdc++-devel \
-    python3-pip python3-devel \
-    util-linux \
     vim-minimal vim-enhanced \
     git \
     ca-certificates \
     rsync \
     sshpass \
-    expect \
-    # sample apps dependencies
-    vsomeip3 vsomeip3-devel \
-    boost-devel"
+    expect"
 
 ENV HOME=${USER_HOME_DIR}
 ENV BUILDAH_ISOLATION=chroot
 
-COPY --from=dependencies /installroot /
 COPY --chown=0:0 entrypoint.sh /
-
-
-COPY --from=uv /uv /bin/uv
-# breaks stuff
-RUN /bin/uv python install 3.12.3
-RUN uv venv /jumpstarter
-COPY --from=builder /src/dist/*.whl /tmp/
-RUN VIRTUAL_ENV=/jumpstarter uv pip install /tmp/*.whl
-ENV PATH="/jumpstarter/bin:${PATH}"
 
 RUN dnf --disableplugin=subscription-manager install -y ${INSTALL_PACKAGES}; \
   dnf update -y ; \
@@ -98,18 +42,6 @@ RUN dnf --disableplugin=subscription-manager install -y ${INSTALL_PACKAGES}; \
   chown 0:0 /etc/subgid ; \
   chown 0:0 /etc/subuid ; \
   chmod -R g=u /etc/subuid /etc/subgid
-
-RUN dnf install -y 'dnf-command(copr)' && \
-    dnf copr enable @centos-automotive-sig/automotive-image-builder -y && \
-    dnf copr enable @centos-automotive-sig/osbuild-auto -y && \
-    dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
-
-RUN dnf install automotive-image-builder -y
-
-RUN dnf install -y --nogpgcheck epel-release && \
-    dnf install -y --setopt=install_weak_deps=False fuse fuse-libs sshfs openssh-clients && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf
 
 # caib
 RUN curl -L -o /usr/local/bin/caib https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.8/caib-v0.0.8-${TARGETARCH} && \
