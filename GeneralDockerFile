@@ -1,0 +1,94 @@
+FROM quay.io/centos/centos:stream9-development
+
+ARG TARGETARCH
+ARG USER_HOME_DIR="/home/user"
+ARG WORK_DIR="/projects"
+ARG INSTALL_PACKAGES="\
+    procps-ng openssl tar gzip zip xz unzip which shadow-utils bash vi wget jq \
+    podman buildah skopeo podman-docker podman-remote fuse-overlayfs \
+    gcc gcc-c++ make cmake \
+    glibc-devel glibc-langpack-en \
+    zlib-devel \
+    libffi-devel \
+    libstdc++-devel \
+    python3.11 python3.11-pip python3.11-devel \
+    python3-pip python3-devel \
+    util-linux \
+    vim-minimal vim-enhanced \
+    git \
+    ca-certificates \
+    rsync \
+    sshpass \
+    expect "
+
+ENV HOME=${USER_HOME_DIR}
+ENV BUILDAH_ISOLATION=chroot
+ENV PYTHON=python3.11
+
+COPY --chown=0:0 entrypoint.sh /
+
+# Install required packages, including shadow-utils (for newuidmap/newgidmap) and Python 3.11
+RUN dnf install -y ${INSTALL_PACKAGES} && \
+    dnf update -y && \
+    dnf clean all
+
+# Confirm Python3.11 and pip are installed
+RUN ${PYTHON} --version && \
+    ${PYTHON} -m pip --version
+
+# Pip installs and capability setup
+RUN mkdir -p /usr/local/bin ${WORK_DIR} && \
+    ${PYTHON} -m pip install --upgrade pip && \
+    ${PYTHON} -m pip install --extra-index-url https://pkg.jumpstarter.dev/simple jumpstarter-all && \
+    ${PYTHON} -m pip install -U podman-compose cekit && \
+    chgrp -R 0 /home && chmod -R g=u /home ${WORK_DIR} && \
+    chmod +x /entrypoint.sh && \
+    chown 0:0 /etc/passwd /etc/group && chmod g=u /etc/passwd /etc/group && \
+    setcap cap_setuid+ep /usr/bin/newuidmap && \
+    setcap cap_setgid+ep /usr/bin/newgidmap && \
+    touch /etc/subgid /etc/subuid && \
+    chown 0:0 /etc/subgid /etc/subuid && chmod -R g=u /etc/subuid /etc/subgid
+
+# Enable COPR repos and install automotive tools
+RUN dnf install -y 'dnf-command(copr)' && \
+    dnf copr enable @centos-automotive-sig/automotive-image-builder -y && \
+    dnf copr enable @centos-automotive-sig/osbuild-auto -y && \
+    dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    dnf install -y automotive-image-builder fuse fuse-libs sshfs openssh-clients && \
+    dnf clean all && rm -rf /var/cache/dnf
+
+# caib binary
+RUN curl -L -o /usr/local/bin/caib \
+      https://github.com/rh-sdv-cloud-incubator/automotive-dev-operator/releases/download/v0.0.8/caib-v0.0.8-${TARGETARCH} && \
+    chmod +x /usr/local/bin/caib
+
+# oc client
+ENV OC_VERSION=4.18
+RUN echo "TARGETARCH=${TARGETARCH}, OC_VERSION=${OC_VERSION}" && \
+    if [ "${TARGETARCH}" = "arm64" ]; then \
+        curl -L -o /tmp/oc.tar.gz "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${OC_VERSION}/openshift-client-linux-arm64.tar.gz"; \
+    else \
+        curl -L -o /tmp/oc.tar.gz "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${OC_VERSION}/openshift-client-linux-amd64-rhel9.tar.gz"; \
+    fi && \
+    tar -C /usr/local/bin -xzvf /tmp/oc.tar.gz --no-same-owner && \
+    chmod +x /usr/local/bin/oc && \
+    rm -f /tmp/oc.tar.gz
+
+# OS Pipelines CLI (tkn)
+ENV TKN_VERSION=1.18.0
+RUN if [ "${TARGETARCH}" = "arm64" ]; then \
+        curl -L "https://mirror.openshift.com/pub/openshift-v4/clients/pipelines/${TKN_VERSION}/tkn-linux-arm64.tar.gz"; \
+    else \
+        curl -L "https://mirror.openshift.com/pub/openshift-v4/clients/pipelines/${TKN_VERSION}/tkn-linux-amd64.tar.gz"; \
+    fi | tar -C /usr/local/bin -xz --no-same-owner && \
+    chmod +x /usr/local/bin/tkn /usr/local/bin/opc /usr/local/bin/tkn-pac
+
+# Jumpstarter config directory
+RUN mkdir -p ${USER_HOME_DIR}/.jumpstarter && \
+    chmod -R g=u ${USER_HOME_DIR}/.jumpstarter/
+
+USER 1000
+WORKDIR ${WORK_DIR}
+
+ENTRYPOINT ["/usr/libexec/podman/catatonit", "--", "/entrypoint.sh"]
+CMD ["tail", "-f", "/dev/null"]
